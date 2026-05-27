@@ -151,9 +151,10 @@ jobs:
       # ── Build Docker dari local path (bukan dari DagsHub remote) ─────────────
       - name: Build Docker Model
         run: |
-          echo "Building Docker image from local model..."
+          MODEL_PATH=$(find ./downloaded_model -name "MLmodel" -type f | head -1 | xargs dirname)
+          echo "Found MLmodel at: $MODEL_PATH"
           mlflow models build-docker \
-            --model-uri "./downloaded_model" \
+            --model-uri "$MODEL_PATH" \
             --name "${{ secrets.DOCKER_USERNAME }}/heart-disease-model" \
             --env-manager=local
 
