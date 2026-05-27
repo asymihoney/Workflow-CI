@@ -84,6 +84,42 @@ jobs:
           name: mlflow-artifacts
           path: artifacts/
 
+      - name: Verify & Download model artifacts
+        env:
+          MLFLOW_TRACKING_URI: ${{ env.MLFLOW_TRACKING_URI }}
+          MLFLOW_TRACKING_USERNAME: ${{ secrets.DAGSHUB_USERNAME }}
+          MLFLOW_TRACKING_PASSWORD: ${{ secrets.DAGSHUB_TOKEN }}
+        run: |
+          RUN_ID="${{ steps.get_run_id.outputs.run_id }}"
+
+          # Cek dulu artifacts apa saja yang ada di run ini
+          python - <<'EOF'
+          import mlflow, os
+          client = mlflow.tracking.MlflowClient()
+          run_id = os.environ.get("RUN_ID", "")
+
+          # List semua artifacts
+          artifacts = client.list_artifacts(run_id)
+          print("Available artifacts:")
+          for a in artifacts:
+              print(f"  - {a.path} (is_dir={a.is_dir})")
+
+          # Cek status run
+          run = client.get_run(run_id)
+          print(f"Run status: {run.info.status}")
+          EOF
+
+          # Download dengan retry
+          for i in 1 2 3; do
+            mlflow artifacts download \
+              --artifact-uri "runs:/$RUN_ID/model" \
+              --dst-path ./downloaded_model && break
+            echo "Attempt $i failed, retrying in 30s..."
+            sleep 30
+          done
+        env:
+          RUN_ID: ${{ steps.get_run_id.outputs.run_id }}
+
       - name: Download model artifacts from DagsHub
         env:
           MLFLOW_TRACKING_URI: ${{ env.MLFLOW_TRACKING_URI }}
