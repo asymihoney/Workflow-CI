@@ -22,12 +22,21 @@ parser.add_argument('--max_depth',        type=int, default=10)
 parser.add_argument('--min_samples_split',type=int, default=2)
 args = parser.parse_args()
 
-# ── DagsHub + MLflow Setup ────────────────────────────────────────────────────
-dagshub.init(
-    repo_owner='projet752',                   # ← ganti username DagsHub kamu
-    repo_name='mlsystem-heart-disease',
-    mlflow=True
-)
+# ── DagsHub + MLflow Setup ─────────────────────────
+import os
+
+# Kalau env variable sudah di-set (GitHub Actions), skip dagshub.init
+if os.environ.get('MLFLOW_TRACKING_URI'):
+    mlflow.set_tracking_uri(os.environ['MLFLOW_TRACKING_URI'])
+else:
+    # Lokal — pakai dagshub.init seperti biasa
+    dagshub.init(
+        repo_owner='projet752',
+        repo_name='mlsystem-heart-disease',
+        mlflow=True
+    )
+
+mlflow.set_experiment("heart-disease-ci")
 
 mlflow.set_experiment("heart-disease-ci")
 
