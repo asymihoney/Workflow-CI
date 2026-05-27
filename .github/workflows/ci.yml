@@ -78,25 +78,31 @@ jobs:
               f.write(f"run_id={run_id}\n")
           EOF
 
-      - name: Install Python dependencies
-        run: pip install mlflow==2.19.0
-
       - name: Upload to GitHub
         uses: actions/upload-artifact@v4
         with:
           name: mlflow-artifacts
           path: artifacts/
 
-      - name: Build Docker Model
+      - name: Download model artifacts from DagsHub
         env:
           MLFLOW_TRACKING_URI: ${{ env.MLFLOW_TRACKING_URI }}
           MLFLOW_TRACKING_USERNAME: ${{ secrets.DAGSHUB_USERNAME }}
           MLFLOW_TRACKING_PASSWORD: ${{ secrets.DAGSHUB_TOKEN }}
         run: |
           RUN_ID="${{ steps.get_run_id.outputs.run_id }}"
-          echo "Building Docker image from run_id: $RUN_ID"
+          for i in 1 2 3; do
+            mlflow artifacts download \
+              --artifact-uri "runs:/$RUN_ID/model" \
+              --dst-path ./downloaded_model && break
+            echo "Attempt $i failed, retrying in 30s..."
+            sleep 30
+          done
+
+      - name: Build Docker Model
+        run: |
           mlflow models build-docker \
-            --model-uri "runs:/$RUN_ID/model" \
+            --model-uri "./downloaded_model" \
             --name "${{ secrets.DOCKER_USERNAME }}/heart-disease-model" \
             --env-manager=local
 
