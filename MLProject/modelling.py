@@ -22,13 +22,10 @@ parser.add_argument('--min_samples_split', type=int, default=2)
 args = parser.parse_args()
 
 # ── MLflow Setup ──────────────────────────────────────────────────────────────
-# Saat dijalankan via MLflow Project, tracking URI sudah di-set otomatis
-# dari environment variable — tidak perlu dagshub.init lagi
+# JANGAN set_experiment() di sini — MLflow Project sudah handle otomatis
 tracking_uri = os.environ.get('MLFLOW_TRACKING_URI', '')
 if tracking_uri:
     mlflow.set_tracking_uri(tracking_uri)
-
-mlflow.set_experiment("heart-disease-ci")
 
 # ── Load Data ─────────────────────────────────────────────────────────────────
 base_dir = os.path.dirname(os.path.abspath(__file__))
@@ -41,7 +38,6 @@ X_test  = test_df.drop('target', axis=1)
 y_test  = test_df['target']
 
 # ── Training + Logging ────────────────────────────────────────────────────────
-# Tidak pakai with mlflow.start_run() — MLflow Project sudah buat run otomatis
 mlflow.log_param("n_estimators",      args.n_estimators)
 mlflow.log_param("max_depth",         args.max_depth)
 mlflow.log_param("min_samples_split", args.min_samples_split)

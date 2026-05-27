@@ -45,10 +45,11 @@ jobs:
         run: |
           mlflow run MLProject/ \
             --env-manager=local \
+            --experiment-name "heart-disease-ci" \
             -P n_estimators=200 \
             -P max_depth=10 \
             -P min_samples_split=2
-
+            
       - name: Get latest MLflow run_id
         run: |
           python - <<'EOF'
